@@ -60,7 +60,7 @@ export class BluetoothManager {
 
       console.log('BluetoothManager: Запрос устройства')
       this.device = await navigator.bluetooth.requestDevice({
-        filters: [{ namePrefix: '' }],
+        acceptAllDevices: true,
         optionalServices: [this.SERVICE_UUID],
       })
       console.log('BluetoothManager: Устройство выбрано')
