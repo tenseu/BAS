@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 
 const props = defineProps<{
   size?: number
@@ -54,47 +54,61 @@ const isDragging = ref(false)
 const containerRect = ref<DOMRect | null>(null)
 const activeTouchId = ref<number | null>(null)
 
+// Начало перемещения
 const startDrag = (event: MouseEvent | TouchEvent) => {
-  if ('touches' in event) {
-    const touch = event.touches[0]
-    activeTouchId.value = touch.identifier
+  let pointer: MouseEvent | Touch
+
+  if (event instanceof TouchEvent) {
+    pointer = event.touches[0]  // берем первый палец
+    activeTouchId.value = pointer.identifier
+  } else {
+    pointer = event
   }
-  
+
   isDragging.value = true
   const container = event.currentTarget as HTMLElement
   containerRect.value = container.getBoundingClientRect()
-  updatePosition(event)
+  updatePosition(pointer)
 }
 
+
+// Перемещение
 const onDrag = (event: MouseEvent | TouchEvent) => {
   if (!isDragging.value) return
-  
+
   if ('touches' in event) {
     const touch = Array.from(event.touches).find(t => t.identifier === activeTouchId.value)
     if (!touch) return
-    updatePosition(new TouchEvent('touch', { touches: [touch] }))
+    updatePosition(touch)
   } else {
     updatePosition(event)
   }
 }
 
+// Окончание перемещения
 const stopDrag = (event?: MouseEvent | TouchEvent) => {
   if (event && 'touches' in event) {
     const remainingTouches = Array.from(event.touches).filter(t => t.identifier === activeTouchId.value)
     if (remainingTouches.length > 0) return
   }
-  
+
   isDragging.value = false
   activeTouchId.value = null
   position.value = { x: 0, y: 0 }
   emit('update', 0, 0)
 }
 
-const updatePosition = (event: MouseEvent | TouchEvent) => {
+// Универсальная функция для получения координат
+const getEventCoords = (event: MouseEvent | Touch): { clientX: number; clientY: number } => {
+  if ('clientX' in event && 'clientY' in event) return { clientX: event.clientX, clientY: event.clientY }
+  return { clientX: 0, clientY: 0 }
+}
+
+// Обновление позиции стика
+const updatePosition = (event: MouseEvent | Touch) => {
   if (!containerRect.value) return
 
-  const clientX = 'touches' in event ? event.touches[0].clientX : event.clientX
-  const clientY = 'touches' in event ? event.touches[0].clientY : event.clientY
+  const { clientX, clientY } = getEventCoords(event)
 
   const centerX = containerRect.value.left + size.value / 2
   const centerY = containerRect.value.top + size.value / 2
@@ -104,7 +118,7 @@ const updatePosition = (event: MouseEvent | TouchEvent) => {
 
   const maxDistance = (size.value - stickSize.value) / 2
   const distance = Math.sqrt(x * x + y * y)
-  
+
   if (distance > maxDistance) {
     const angle = Math.atan2(y, x)
     x = Math.cos(angle) * maxDistance
@@ -168,4 +182,4 @@ onUnmounted(() => {
 .joystick-stick:active {
   cursor: grabbing;
 }
-</style> 
+</style>
