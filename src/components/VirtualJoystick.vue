@@ -2,14 +2,11 @@
   <div
     class="joystick-container"
     :style="{ width: size + 'px', height: size + 'px' }"
-    @touchstart.prevent="onTouchStart"
-    @touchmove.prevent="onTouchMove"
-    @touchend.prevent="onTouchEnd"
-    @touchcancel.prevent="onTouchEnd"
-    @mousedown.prevent="onMouseDown"
-    @mousemove.prevent="onMouseMove"
-    @mouseup.prevent="onMouseUp"
-    @mouseleave.prevent="onMouseUp"
+    @pointerdown="onPointerDown"
+    @pointermove="onPointerMove"
+    @pointerup="onPointerUp"
+    @pointercancel="onPointerUp"
+    @pointerleave="onPointerUp"
   >
     <div
       class="joystick-base"
@@ -52,49 +49,29 @@ const stickColor = computed(() => props.stickColor || '#42b983')
 
 const position = ref({ x: 0, y: 0 })
 const isDragging = ref(false)
-const activeTouchId = ref<number | null>(null)
+const activePointerId = ref<number | null>(null)
 const containerRect = ref<DOMRect | null>(null)
 
-const onTouchStart = (event: TouchEvent) => {
-  if (activeTouchId.value !== null) return // уже захватили одно касание
-  const touch = event.changedTouches[0]
-  activeTouchId.value = touch.identifier
-  startDrag(touch.clientX, touch.clientY, event.currentTarget as HTMLElement)
-}
-
-const onTouchMove = (event: TouchEvent) => {
-  if (activeTouchId.value === null) return
-  const touch = Array.from(event.touches).find(t => t.identifier === activeTouchId.value)
-  if (!touch) return
-  updatePosition(touch.clientX, touch.clientY)
-}
-
-const onTouchEnd = (event: TouchEvent) => {
-  if (activeTouchId.value === null) return
-  const touch = Array.from(event.changedTouches).find(t => t.identifier === activeTouchId.value)
-  if (!touch) return
-  stopDrag()
-}
-
-const onMouseDown = (event: MouseEvent) => {
-  startDrag(event.clientX, event.clientY, event.currentTarget as HTMLElement)
+const onPointerDown = (event: PointerEvent) => {
+  if (activePointerId.value !== null) return // уже захватили одно касание
+  activePointerId.value = event.pointerId
+  const container = event.currentTarget as HTMLElement
+  container.setPointerCapture(event.pointerId)
+  containerRect.value = container.getBoundingClientRect()
   isDragging.value = true
-}
-
-const onMouseMove = (event: MouseEvent) => {
-  if (!isDragging.value) return
   updatePosition(event.clientX, event.clientY)
 }
 
-const onMouseUp = () => {
-  if (!isDragging.value) return
-  stopDrag()
+const onPointerMove = (event: PointerEvent) => {
+  if (event.pointerId !== activePointerId.value) return
+  updatePosition(event.clientX, event.clientY)
 }
 
-const startDrag = (clientX: number, clientY: number, container: HTMLElement) => {
-  containerRect.value = container.getBoundingClientRect()
-  isDragging.value = true
-  updatePosition(clientX, clientY)
+const onPointerUp = (event: PointerEvent) => {
+  if (event.pointerId !== activePointerId.value) return
+  const container = event.currentTarget as HTMLElement
+  container.releasePointerCapture(event.pointerId)
+  stopDrag()
 }
 
 const updatePosition = (clientX: number, clientY: number) => {
@@ -125,7 +102,7 @@ const updatePosition = (clientX: number, clientY: number) => {
 
 const stopDrag = () => {
   isDragging.value = false
-  activeTouchId.value = null
+  activePointerId.value = null
   position.value = { x: 0, y: 0 }
   emit('update', 0, 0)
 }
@@ -138,7 +115,7 @@ onUnmounted(() => {
 <style scoped>
 .joystick-container {
   position: relative;
-  touch-action: none;
+  touch-action: none; /* обязательно для multi-touch */
   user-select: none;
 }
 
