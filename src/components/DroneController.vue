@@ -1,5 +1,6 @@
 <template>
   <div class="controller-container">
+    <!-- Статус-панель сверху -->
     <div class="status-bar">
       <q-btn
         :color="bluetoothManager.isConnected.value ? 'negative' : 'primary'"
@@ -13,46 +14,49 @@
       </div>
     </div>
 
+    <!-- Основные элементы контроллера -->
     <div class="controls">
-      <div class="joysticks">
-        <div class="joystick-wrapper">
-          <VirtualJoystick
-            @update="updateLeftStick"
-            base-color="#1976D2"
-            stick-color="#2196F3"
-          />
-        </div>
-        <div class="joystick-wrapper">
-          <VirtualJoystick
-            @update="updateRightStick"
-            base-color="#C2185B"
-            stick-color="#E91E63"
-          />
-        </div>
+      <!-- Левый стик -->
+      <div class="joystick-wrapper">
+        <VirtualJoystick
+          @update="updateLeftStick"
+          :size="joystickSize"
+          base-color="#1976D2"
+          stick-color="#2196F3"
+        />
       </div>
 
+      <!-- Кнопки -->
       <div class="buttons">
-        <div class="button-row">
-          <q-btn
-            v-for="button in buttons"
-            :key="button.id"
-            :color="buttonStates[button.id] ? 'primary' : 'grey'"
-            class="control-button"
-            @mousedown="buttonDown(button.id)"
-            @mouseup="buttonUp(button.id)"
-            @touchstart="buttonDown(button.id)"
-            @touchend="buttonUp(button.id)"
-          >
-            {{ button.label }}
-          </q-btn>
-        </div>
+        <q-btn
+          v-for="button in buttons"
+          :key="button.id"
+          :color="buttonStates[button.id] ? 'primary' : 'grey'"
+          class="control-button"
+          @mousedown="buttonDown(button.id)"
+          @mouseup="buttonUp(button.id)"
+          @touchstart="buttonDown(button.id)"
+          @touchend="buttonUp(button.id)"
+        >
+          {{ button.label }}
+        </q-btn>
+      </div>
+
+      <!-- Правый стик -->
+      <div class="joystick-wrapper">
+        <VirtualJoystick
+          @update="updateRightStick"
+          :size="joystickSize"
+          base-color="#C2185B"
+          stick-color="#E91E63"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import VirtualJoystick from './VirtualJoystick.vue'
 import { BluetoothManager, type ControllerData } from '@/services/BluetoothManager'
 
@@ -68,6 +72,9 @@ const buttons = [
   { id: 'emergency', label: 'Стоп' },
   { id: 'mode', label: 'Режим' }
 ]
+
+// размер стика адаптивно ~40% высоты экрана
+const joystickSize = computed(() => Math.min(window.innerHeight * 0.4, 250))
 
 const updateLeftStick = (x: number, y: number) => {
   leftStick.value = { x, y }
@@ -107,20 +114,16 @@ const sendControllerData = async () => {
 
 const toggleConnection = async () => {
   try {
-    console.log('DroneController: Попытка переключения подключения');
     if (bluetoothManager.isConnected.value) {
-      console.log('DroneController: Отключение');
-      await bluetoothManager.disconnect();
+      await bluetoothManager.disconnect()
     } else {
-      console.log('DroneController: Подключение');
-      await bluetoothManager.connect();
+      await bluetoothManager.connect()
     }
   } catch (error) {
-    console.error('DroneController: Ошибка:', error);
+    console.error('DroneController: Ошибка:', error)
   }
 }
 
-// Очистка при размонтировании
 onUnmounted(() => {
   if (bluetoothManager.isConnected.value) {
     bluetoothManager.disconnect()
@@ -130,56 +133,58 @@ onUnmounted(() => {
 
 <style scoped>
 .controller-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background: #121212;
+  color: #fff;
+  padding: env(safe-area-inset-top) 12px env(safe-area-inset-bottom) 12px;
+  box-sizing: border-box;
 }
 
 .status-bar {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 20px;
-  margin-bottom: 20px;
+  gap: 12px;
+  padding: 8px 0;
 }
 
 .error-message {
-  color: #f44336;
+  color: #ff5252;
+  font-size: 14px;
 }
 
 .controls {
   display: flex;
-  flex-direction: column;
-  gap: 30px;
-}
-
-.joysticks {
-  display: flex;
+  flex: 1;
+  flex-direction: row;
   justify-content: space-between;
-  gap: 20px;
+  align-items: center;
+  gap: 12px;
 }
 
 .joystick-wrapper {
-  text-align: center;
-}
-
-.joystick-wrapper h3 {
-  margin-bottom: 10px;
-  color: #333;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .buttons {
   display: flex;
-  justify-content: center;
-}
-
-.button-row {
-  display: flex;
-  gap: 10px;
+  flex-direction: column;
+  gap: 16px;
+  flex-shrink: 0;
+  min-width: 140px;
+  align-items: center;
 }
 
 .control-button {
-  min-width: 100px;
-  height: 50px;
+  width: 100%;
+  height: 56px;
+  font-size: 16px;
+  border-radius: 12px;
 }
-</style> 
+</style>
