@@ -1,0 +1,19 @@
+{
+  "name": "Drone Controller",
+  "short_name": "Drone Controller",
+  "description": "Web Bluetooth controller for drone",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1976D2",
+  "permissions": [
+    "bluetooth"
+  ],
+  "bluetooth": {
+    "uuids": [
+      "0000FFE0-0000-1000-8000-00805F9B34FB",
+      "0000FFE1-0000-1000-8000-00805F9B34FB"
+    ]
+  }
+} 
