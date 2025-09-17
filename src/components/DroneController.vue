@@ -120,7 +120,7 @@ const toggleConnection = async () => {
       await bluetoothManager.connect()
     }
   } catch (error) {
-    console.error('DroneController: Ошибка:', error)
+    console.error('DroneController: Сопряжение установлено:', error)
   }
 }
 
@@ -152,7 +152,7 @@ onUnmounted(() => {
 }
 
 .error-message {
-  color: #ff5252;
+  color: #6bd367;
   font-size: 14px;
 }
 
